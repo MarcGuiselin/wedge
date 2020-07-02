@@ -1,0 +1,17 @@
+[package]
+name = "uninstaller"
+version = "0.1.0"
+authors = ["Marc Guiselin <https://github.com/MarcGuiselin>"]
+edition = "2018"
+description = "Uninstall Wedge - The simple Open-Source Edge Deflector"
+license = "GPL-3.0"
+publish = false
+
+[dependencies]
+wedge_lib = { path = "../wedge_lib" }
+widestring = "0.4.0"
+winapi = { version = "0.3.8", features = [
+    "winuser", "libloaderapi", "commctrl", "shlobj", "shellapi", "fileapi", "winbase"] }
+
+[build-dependencies]
+wedge_lib = { path = "../wedge_lib" }

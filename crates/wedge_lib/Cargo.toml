@@ -1,0 +1,23 @@
+[package]
+name = "wedge_lib"
+version = "0.1.0"
+authors = ["Marc Guiselin <https://github.com/MarcGuiselin>"]
+edition = "2018"
+description = "Library for code shared between wedge package"
+license = "GPL-3.0"
+publish = false
+
+[dependencies]
+# For install
+win-user-pref = { git = "https://github.com/MarcGuiselin/win-user-pref" }
+widestring = "0.4.0"
+winreg = "0.7.0"
+winapi = { version = "0.3.8", features = [
+    "winuser", "libloaderapi", "commctrl", "shlobj", "shellapi", "combaseapi", "objbase", "unknwnbase", "winnt", "shtypes"] }
+
+# For build
+handlebars = "3.0"
+serde_json = "1.0"
+embed-resource = "1.3"
+fs_extra = "1.1"
+cargo_metadata = "0.9"

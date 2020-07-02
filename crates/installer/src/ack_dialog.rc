@@ -1,0 +1,14 @@
+#define ACK_DIALOG 100
+#define ID_SYSLINK 1000
+
+// https://stackoverflow.com/questions/50058737/win32-win-api-c-dialog-box-is-not-showing
+// https://docs.microsoft.com/en-us/windows/win32/menurc/dialogex-resource
+ACK_DIALOG DIALOGEX 0, 0, 310, 98
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | DS_CENTER | WS_MINIMIZEBOX
+CAPTION "Install Wedge - Please Acknowledge"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",     IDOK,     92,   78,  102,  14, BS_ICON | WS_GROUP
+    PUSHBUTTON      "Cancel", IDCANCEL, 202,  78,  102,  14, WS_GROUP
+    CONTROL         "", ID_SYSLINK, "SysLink", WS_TABSTOP, 93, 7, 212, 68
+END

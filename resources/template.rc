@@ -1,0 +1,28 @@
+#include <windows.h>
+
+#define RT_MANIFEST 24
+
+1 VERSIONINFO
+FILEFLAGSMASK 0x3f
+FILEVERSION {{four_digit_comma_separated_version}}
+PRODUCTVERSION {{four_digit_comma_separated_version}}
+FILETYPE 0x1
+FILESUBTYPE 0x0
+FILEFLAGS 0x0
+FILEOS 0x40004 {
+    BLOCK "StringFileInfo" {
+        BLOCK "000004b0" {
+            VALUE "FileDescription", "{{description}}"
+            VALUE "ProductName", "{{name}}"
+            VALUE "FileVersion", "{{version}}"
+            VALUE "ProductVersion", "{{version}}"
+            VALUE "LegalCopyright", "{{copyright}}"
+        }
+    }
+    BLOCK "VarFileInfo" {
+        VALUE "Translation", 0x0, 0x04b0
+    }
+}
+
+1 ICON "wedge.ico"
+1 RT_MANIFEST "template.manifest"

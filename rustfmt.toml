@@ -1,0 +1,9 @@
+unstable_features = true
+
+merge_imports = true
+reorder_impl_items = true
+newline_style = "Unix"
+fn_single_line = true
+blank_lines_upper_bound = 3
+format_macro_matchers = true
+overflow_delimited_expr = true
