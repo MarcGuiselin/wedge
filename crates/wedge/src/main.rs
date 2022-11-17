@@ -1,7 +1,6 @@
 // Don't use console on release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod update;
 mod uri;
 use std::env;
 use wedge_lib::win32::shell_execute;
@@ -16,9 +15,4 @@ fn main() {
             shell_execute(&url);
         }
     }
-    // Check for updates
-    /*match update::check() {
-        Ok(_) => {}
-        Err(e) => eprintln!("{}", e),
-    }*/
 }
