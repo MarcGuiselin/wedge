@@ -42,7 +42,7 @@ fn get_package_details() -> (String, String) {
     }
 
     // Get workspace root
-    let ret2 = String::from((&metadata.workspace_root).to_str().unwrap());
+    let ret2 = String::from(metadata.workspace_root.as_str());
     (ret.unwrap(), ret2)
 }
 

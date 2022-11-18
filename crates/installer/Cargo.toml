@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 wedge_lib = { path = "../wedge_lib" }
-winapi = { version = "0.3.8", features = [
+winapi = { version = "0.3.9", features = [
     "winuser", "libloaderapi", "commctrl", "shlobj", "shellapi"] }
 
 [build-dependencies]
