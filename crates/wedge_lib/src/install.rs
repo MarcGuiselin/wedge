@@ -173,7 +173,7 @@ pub fn install(step: usize) -> Result<String, Error> {
         // Open link to confirm success
         5 => {
             // Open a link that would typically be opened up in edge
-            shell_execute("microsoft-edge:https://www.bing.com/#chrometana-pro-notify-successful-wedge-install");
+            shell_execute("microsoft-edge:https://www.bing.com/#notify-redirect-extension-successful-wedge-install");
             String::from(
                 "All steps completed successfully! You may now close this installer.\nWedge can \
                  be easily uninstalled in windows Apps & Features",
