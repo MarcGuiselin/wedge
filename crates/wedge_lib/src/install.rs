@@ -5,7 +5,6 @@ use std::{
     path::Path,
     ptr::null_mut,
 };
-use win_user_pref::userpref::UserPref;
 use winapi::um::{
     libloaderapi::{FindResourceW, GetModuleHandleW, LoadResource, LockResource, SizeofResource},
     winnt::LPWSTR,
@@ -114,14 +113,6 @@ pub fn install(step: usize) -> Result<String, Error> {
             let (command, _) = class.create_subkey(r"shell\open\command")?;
             command.set_value("", &format!("{} \"%1\"", &binary_path_string))?;
 
-            // Register "microsoft-edge:" url association
-            let (capabilities, _) =
-                class.create_subkey(Path::new("Clients").join(&APP_ID).join("Capabilities"))?;
-            capabilities.set_value("ApplicationDescription", &APP_DESC)?;
-            capabilities.set_value("ApplicationName", &APP_NAME)?;
-            let (url_associations, _) = capabilities.create_subkey(r"UrlAssociations")?;
-            url_associations.set_value("microsoft-edge", &APP_ID)?;
-
             // Registering AppId
             let registered_applications =
                 software.open_subkey_with_flags(r"RegisteredApplications", KEY_ALL_ACCESS)?;
@@ -161,14 +152,19 @@ pub fn install(step: usize) -> Result<String, Error> {
             )?;
             String::from("Created start menu shortcut")
         }
-        // Override microsoft-edge user pref
+        // Register IFEO
         4 => {
-            UserPref::new(RegKey::predef(HKEY_CURRENT_USER))?.change(
-                r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations",
-                "microsoft-edge",
-                &APP_ID,
+            let (ifeo, _) = RegKey::predef(HKEY_LOCAL_MACHINE).create_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\msedge.exe")?;
+            ifeo.set_value("UseFilter", &1u32)?;
+
+            let (filter, _) = ifeo.create_subkey(r"0")?;
+            filter.set_value("Debugger", &binary_path_string)?;
+            filter.set_value(
+                "FilterFullPath",
+                &r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             )?;
-            String::from("Overrode microsoft-edge user pref")
+
+            String::from("Registered IFEO")
         }
         // Open link to confirm success
         5 => {
@@ -185,6 +181,11 @@ pub fn install(step: usize) -> Result<String, Error> {
 
 /// Uninstall Wedge
 pub fn uninstall() -> Result<(), Error> {
+    // Unregister IFEO
+    RegKey::predef(HKEY_LOCAL_MACHINE).delete_subkey_all(
+        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\msedge.exe",
+    )?;
+
     // Try to delete install location. This will only succede when the original
     // uninstaller stops running.
     let install_path = Path::new(&get_local_install_location()?).join(&INSTALL_FOLDER);
@@ -212,11 +213,6 @@ pub fn uninstall() -> Result<(), Error> {
     // Unregister uninstaller
     software
         .delete_subkey_all(Path::new(r"Microsoft\Windows\CurrentVersion\Uninstall").join(APP_ID))?;
-
-    // System will restore the original user pref
-    software.delete_subkey(
-        r"Microsoft\Windows\Shell\Associations\UrlAssociations\microsoft-edge\UserChoice",
-    )?;
 
     Ok(())
 }
