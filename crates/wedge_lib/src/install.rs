@@ -164,6 +164,12 @@ pub fn install(step: usize) -> Result<String, Error> {
                 &r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             )?;
 
+            // Create a junction point in the install directory that links to the edge folder
+            // Critically, this allows executing msedge.exe by an alternate path that is ignored by our IFEO
+            let link_folder_path = install_path.join("Edge");
+            let path = link_folder_path.to_str().unwrap();
+            create_directory_junction(path, r"C:\Program Files (x86)\Microsoft\Edge\Application")?;
+
             String::from("Registered IFEO")
         }
         // Open link to confirm success

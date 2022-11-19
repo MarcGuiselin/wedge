@@ -9,11 +9,10 @@ publish = false
 
 [dependencies]
 # For install
-win-user-pref = { git = "https://github.com/MarcGuiselin/win-user-pref" }
 widestring = "1.0"
 winreg = "0.10"
 winapi = { version = "0.3.9", features = [
-    "winuser", "libloaderapi", "commctrl", "shlobj", "shellapi", "combaseapi", "objbase", "unknwnbase", "winnt", "shtypes", "fileapi"] }
+    "winuser", "libloaderapi", "commctrl", "shlobj", "shellapi", "combaseapi", "objbase", "unknwnbase", "winnt", "shtypes", "fileapi", "processenv", "stringapiset", "ioapiset", "winioctl", "winbase", "securitybaseapi"] }
 
 # For build
 handlebars = "4.3"

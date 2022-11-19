@@ -6,24 +6,30 @@ use std::{
     ffi::OsStr,
     io::{Error, ErrorKind},
     iter::once,
+    mem::size_of,
     os::windows::ffi::OsStrExt,
-    ptr::null_mut,
+    ptr::{copy_nonoverlapping, null_mut},
 };
 use widestring::U16CString;
 use winapi::{
     shared::{
-        minwindef::{MAX_PATH, TRUE},
-        ntdef::NULL,
+        minwindef::{DWORD, MAX_PATH, TRUE, WORD},
+        ntdef::{HANDLE, NULL, WCHAR},
         winerror::{SUCCEEDED, S_OK},
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
     um::{
         combaseapi::{CoCreateInstance, CoInitializeEx},
-        fileapi::GetTempPathW,
+        fileapi::{CreateFileW, GetTempPathW, OPEN_EXISTING},
+        handleapi::{CloseHandle, INVALID_HANDLE_VALUE},
+        ioapiset::DeviceIoControl,
         libloaderapi::{GetModuleFileNameW, GetModuleHandleW},
         objbase::COINIT_MULTITHREADED,
         shellapi::ShellExecuteW,
         shlobj::{SHGetFolderPathW, CSIDL_LOCAL_APPDATA, CSIDL_PROGRAMS},
+        winbase::{FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT},
+        winioctl::FSCTL_SET_REPARSE_POINT,
+        winnt::{GENERIC_READ, GENERIC_WRITE, IO_REPARSE_TAG_MOUNT_POINT},
         winuser::SW_SHOWNORMAL,
     },
 };
@@ -325,9 +331,90 @@ mod com {
     }
 }
 
+/// Creates a directory junction
+#[cfg(windows)]
+pub fn create_directory_junction(path: &str, target: &str) -> Result<(), Error> {
+    unsafe {
+        // Create junction point folder, removing any dir or file already there
+        let _ = std::fs::remove_dir(path);
+        let _ = std::fs::remove_file(path);
+        let _ = std::fs::create_dir(path);
+
+        // Open handle to folder that will become a junction point
+        let wpath = TEXT!(path);
+        let junction_handle: HANDLE = CreateFileW(
+            wpath,
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            null_mut(),
+            OPEN_EXISTING,
+            FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+            0 as _,
+        );
+        if junction_handle == INVALID_HANDLE_VALUE {
+            return Err(Error::last_os_error());
+        }
+
+        // Create mount point reparse buffer
+        // https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/ca069dad-ed16-42aa-b057-b6b207f447cc
+        let mut buffer: Vec<u16> = {
+            let substitute_name: Vec<u16> = OsStr::new(&format!(r"\??\{}", target))
+                .encode_wide()
+                .collect();
+            let substitute_name_byte_length = substitute_name.len() as u16 * 2;
+
+            // Mount Point Reparse Data Buffer
+            vec![
+                0x0003,
+                0xA000,
+                substitute_name_byte_length + 4 + 8,
+                0,
+                0,
+                substitute_name_byte_length,
+                substitute_name_byte_length + 2,
+                0,
+            ]
+            .into_iter()
+            .chain(substitute_name.into_iter())
+            .chain(vec![0; 2].into_iter())
+            .collect()
+        };
+
+        if DeviceIoControl(
+            junction_handle,
+            FSCTL_SET_REPARSE_POINT,
+            buffer.as_mut_ptr() as _,
+            buffer.len() as u32 * 2,
+            null_mut(),
+            0,
+            &mut 0,
+            null_mut(),
+        ) == 0
+        {
+            let err = Error::last_os_error();
+            CloseHandle(junction_handle);
+            let _ = std::fs::remove_dir(path);
+            return Err(err);
+        }
+
+        CloseHandle(junction_handle);
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_dddd() {
+        create_directory_junction(
+            r"C:\Users\Marc\Downloads\a\jjjj",
+            r"C:\Users\Marc\Downloads\a\b\c",
+        )
+        .expect("failed");
+    }
 
     #[test]
     fn test_win32_string() {
