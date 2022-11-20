@@ -109,7 +109,7 @@ pub fn compile_using_template_resource_file(
         "dotname": dotname, //"MarcGuiselin.Wedge.Installer",
         "description": env_var!("CARGO_PKG_DESCRIPTION"),
         "copyright": license,
-        "version": version[1..4].join("."), // 1.2.3
+        "version": version[0..3].join("."), // 1.2.3
         "four_digit_version": version.join("."), // 1.2.3.0
         "four_digit_comma_separated_version": version.join(", "), // 1, 2, 3, 0
     });
