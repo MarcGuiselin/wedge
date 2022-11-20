@@ -1,6 +1,6 @@
 [package]
 name = "uninstaller"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Marc Guiselin <https://github.com/MarcGuiselin>"]
 edition = "2018"
 description = "Uninstall Wedge - The simple Open-Source Edge Deflector"
