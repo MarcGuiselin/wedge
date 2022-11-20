@@ -1,3 +1,5 @@
+use wedge_lib::build::*;
+
 fn main() {
     // Reload changes from resource files
     println!("cargo:rerun-if-changed=src/ack_dialog.rc");
@@ -6,7 +8,7 @@ fn main() {
     println!("cargo:rerun-if-changed=../../LICENSE");
 
     // Compile
-    wedge_lib::build::compile_using_template_resource_file(
+    compile_using_template_resource_file(
         "Wedge Installer",
         "wedge.installer",
         vec!["src/ack_dialog.rc", "src/install_dialog.rc", "src/embed.rc"],
@@ -23,5 +25,6 @@ fn main() {
             },
             "../../LICENSE",
         ],
+        ExecutionLevel::RequireAdministrator,
     );
 }

@@ -46,12 +46,30 @@ fn get_package_details() -> (String, String) {
     (ret.unwrap(), ret2)
 }
 
+#[derive(Debug)]
+pub enum ExecutionLevel {
+    AsInvoker,
+    HighestAvailable,
+    RequireAdministrator,
+}
+
+impl ExecutionLevel {
+    fn to_str(&self) -> &str {
+        match &self {
+            ExecutionLevel::AsInvoker => "asInvoker",
+            ExecutionLevel::HighestAvailable => "highestAvailable",
+            ExecutionLevel::RequireAdministrator => "requireAdministrator",
+        }
+    }
+}
+
 /// Compile final binaries using template resource files
 pub fn compile_using_template_resource_file(
     name: &str,
     dotname: &str,
     resource_appends: Vec<&str>,
     additional_resources: Vec<&str>,
+    execution_level: ExecutionLevel,
 ) {
     let out_dir = env_var!("OUT_DIR");
     let out_dir = Path::new(out_dir);
@@ -112,6 +130,7 @@ pub fn compile_using_template_resource_file(
         "version": version[0..3].join("."), // 1.2.3
         "four_digit_version": version.join("."), // 1.2.3.0
         "four_digit_comma_separated_version": version.join(", "), // 1, 2, 3, 0
+        "execution_level": execution_level.to_str(),
     });
 
     // Render templates
