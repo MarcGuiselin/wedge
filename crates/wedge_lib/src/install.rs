@@ -13,7 +13,7 @@ use winapi::um::{
 use winreg::{enums::*, RegKey};
 
 // General install settings
-pub const INSTALL_FOLDER: &str = "Wedge";
+pub const INSTALL_DIR: &str = r"C:\Program Files (x86)\Wedge";
 pub const APP_ID: &str = "Wedge";
 pub const APP_DESC: &str =
     "Open web links normally forced to open in Microsoft Edge in your default web browser.";
@@ -36,7 +36,7 @@ static mut INSTALL_SIZE: u32 = 0;
 
 /// Install Wedge step by step
 pub fn install(step: usize) -> Result<String, Error> {
-    let install_path = get_local_install_location()?.join(&INSTALL_FOLDER);
+    let install_path = Path::new(&INSTALL_DIR);
     let install_path_string = format!("\"{}\"", install_path.to_str().unwrap());
     let binary_path = install_path.join(&BINARY_NAME);
     let uninstaller_path = install_path.join(&UNINSTALLER_NAME);
@@ -94,8 +94,8 @@ pub fn install(step: usize) -> Result<String, Error> {
         // Registry keys
         // https://docs.microsoft.com/en-us/windows/win32/shell/app-registration
         2 => {
-            // Install for this user locally
-            let software = RegKey::predef(HKEY_CURRENT_USER).open_subkey("Software")?;
+            // Install for all users
+            let software = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("Software")?;
 
             // Register app path as per https://docs.microsoft.com/en-us/windows/win32/shell/app-registration
             let (app_path, _) = software.create_subkey(
@@ -143,7 +143,7 @@ pub fn install(step: usize) -> Result<String, Error> {
         // Create start menu link
         3 => {
             create_link(
-                &get_user_start_menu_location()?
+                &get_global_start_menu_location()?
                     .join(&format!("{}.lnk", APP_NAME))
                     .to_str()
                     .unwrap(),
@@ -194,7 +194,7 @@ pub fn uninstall() -> Result<(), Error> {
 
     // Try to delete install location. This will only succede when the original
     // uninstaller stops running.
-    let install_path = get_local_install_location()?.join(&INSTALL_FOLDER);
+    let install_path = get_local_install_location()?.join(&INSTALL_DIR);
 
     // Try deleting source file until it succeeds
     while remove_dir_all(&install_path).is_err() {
@@ -202,10 +202,10 @@ pub fn uninstall() -> Result<(), Error> {
     }
 
     // Delete shortcut if it's still there
-    let _ = remove_file(get_user_start_menu_location()?.join(&format!("{}.lnk", APP_NAME)));
+    let _ = remove_file(get_global_start_menu_location()?.join(&format!("{}.lnk", APP_NAME)));
 
     // Remove local install registry entries
-    let software = RegKey::predef(HKEY_CURRENT_USER).open_subkey("Software")?;
+    let software = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("Software")?;
 
     // Remove registering of binary
     software.delete_subkey_all(

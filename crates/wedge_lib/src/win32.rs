@@ -6,16 +6,15 @@ use std::{
     ffi::OsStr,
     io::{Error, ErrorKind},
     iter::once,
-    mem::size_of,
     os::windows::ffi::OsStrExt,
     path::PathBuf,
-    ptr::{copy_nonoverlapping, null_mut},
+    ptr::null_mut,
 };
 use widestring::U16CString;
 use winapi::{
     shared::{
-        minwindef::{DWORD, MAX_PATH, TRUE, WORD},
-        ntdef::{HANDLE, NULL, WCHAR},
+        minwindef::{MAX_PATH, TRUE},
+        ntdef::{HANDLE, NULL},
         winerror::{SUCCEEDED, S_OK},
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
@@ -27,10 +26,10 @@ use winapi::{
         libloaderapi::{GetModuleFileNameW, GetModuleHandleW},
         objbase::COINIT_MULTITHREADED,
         shellapi::ShellExecuteW,
-        shlobj::{SHGetFolderPathW, CSIDL_LOCAL_APPDATA, CSIDL_PROGRAMS},
+        shlobj::{SHGetFolderPathW, CSIDL_COMMON_PROGRAMS, CSIDL_LOCAL_APPDATA, CSIDL_PROGRAMS},
         winbase::{FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT},
         winioctl::FSCTL_SET_REPARSE_POINT,
-        winnt::{GENERIC_READ, GENERIC_WRITE, IO_REPARSE_TAG_MOUNT_POINT},
+        winnt::{GENERIC_READ, GENERIC_WRITE},
         winuser::SW_SHOWNORMAL,
     },
 };
@@ -159,6 +158,12 @@ pub fn get_local_install_location() -> Result<PathBuf, Error> {
 #[cfg(windows)]
 pub fn get_user_start_menu_location() -> Result<PathBuf, Error> {
     shell_get_folder_path(CSIDL_PROGRAMS)
+}
+
+/// Returns location of user's program shortcuts
+#[cfg(windows)]
+pub fn get_global_start_menu_location() -> Result<PathBuf, Error> {
+    shell_get_folder_path(CSIDL_COMMON_PROGRAMS)
 }
 
 /// Creates a link to another file
