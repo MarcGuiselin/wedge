@@ -192,13 +192,17 @@ pub fn uninstall() -> Result<(), Error> {
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\msedge.exe",
     )?;
 
-    // Try to delete install location. This will only succede when the original
-    // uninstaller stops running.
     let install_path = get_local_install_location()?.join(&INSTALL_DIR);
 
-    // Try deleting source file until it succeeds
+    // Try to delete install location. This will only succede when the original
+    // uninstaller stops running. panics after 100 failures.
+    let mut try_count = 0;
     while remove_dir_all(&install_path).is_err() {
-        // std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        try_count = try_count + 1;
+        if try_count > 100 {
+            panic!("");
+        }
     }
 
     // Delete shortcut if it's still there
