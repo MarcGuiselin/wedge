@@ -5,7 +5,6 @@ use std::{
     env::args,
     io::Error,
     mem::size_of,
-    path::Path,
     ptr::{null, null_mut},
 };
 use wedge_lib::{
@@ -67,16 +66,16 @@ fn uninstall_proc() -> Result<(), Error> {
             ) == IDOK
             {
                 let source = get_self_location()?;
-                let target = Path::new(&get_temp_location()?).join(UNINSTALLER_NAME);
-                let target = target.to_str().unwrap();
+                let target = get_temp_location()?.join(UNINSTALLER_NAME);
+                let target_str = target.to_str().unwrap();
 
                 // Make a copy of this uninstaller in the %temp% file overwriting any copies
-                if CopyFileW(TEXT!(&source), TEXT!(&target), FALSE) == 0 {
+                if CopyFileW(TEXT!(&source.to_str().unwrap()), TEXT!(target_str), FALSE) == 0 {
                     return Err(Error::last_os_error());
                 }
 
                 // Movefile to empty so the uninstaller will eventually be deleted
-                MoveFileExW(TEXT!(&target), null(), MOVEFILE_DELAY_UNTIL_REBOOT);
+                MoveFileExW(TEXT!(target_str), null(), MOVEFILE_DELAY_UNTIL_REBOOT);
 
                 let mut pi = PROCESS_INFORMATION {
                     hProcess: null_mut(),
@@ -107,7 +106,7 @@ fn uninstall_proc() -> Result<(), Error> {
 
                 // Invoke the temp uninstaller with command line args "run-uninstall"
                 if CreateProcessW(
-                    TEXT!(&target),
+                    TEXT!(target_str),
                     TEXT!("run-uninstall"),
                     null_mut(),
                     null_mut(),

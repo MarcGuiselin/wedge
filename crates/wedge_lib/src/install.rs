@@ -36,7 +36,7 @@ static mut INSTALL_SIZE: u32 = 0;
 
 /// Install Wedge step by step
 pub fn install(step: usize) -> Result<String, Error> {
-    let install_path = Path::new(&get_local_install_location()?).join(&INSTALL_FOLDER);
+    let install_path = get_local_install_location()?.join(&INSTALL_FOLDER);
     let install_path_string = format!("\"{}\"", install_path.to_str().unwrap());
     let binary_path = install_path.join(&BINARY_NAME);
     let uninstaller_path = install_path.join(&UNINSTALLER_NAME);
@@ -143,7 +143,7 @@ pub fn install(step: usize) -> Result<String, Error> {
         // Create start menu link
         3 => {
             create_link(
-                &Path::new(&get_user_start_menu_location()?)
+                &get_user_start_menu_location()?
                     .join(&format!("{}.lnk", APP_NAME))
                     .to_str()
                     .unwrap(),
@@ -194,7 +194,7 @@ pub fn uninstall() -> Result<(), Error> {
 
     // Try to delete install location. This will only succede when the original
     // uninstaller stops running.
-    let install_path = Path::new(&get_local_install_location()?).join(&INSTALL_FOLDER);
+    let install_path = get_local_install_location()?.join(&INSTALL_FOLDER);
 
     // Try deleting source file until it succeeds
     while remove_dir_all(&install_path).is_err() {
@@ -202,8 +202,7 @@ pub fn uninstall() -> Result<(), Error> {
     }
 
     // Delete shortcut if it's still there
-    let _ =
-        remove_file(Path::new(&get_user_start_menu_location()?).join(&format!("{}.lnk", APP_NAME)));
+    let _ = remove_file(get_user_start_menu_location()?.join(&format!("{}.lnk", APP_NAME)));
 
     // Remove local install registry entries
     let software = RegKey::predef(HKEY_CURRENT_USER).open_subkey("Software")?;

@@ -8,6 +8,7 @@ use std::{
     iter::once,
     mem::size_of,
     os::windows::ffi::OsStrExt,
+    path::PathBuf,
     ptr::{copy_nonoverlapping, null_mut},
 };
 use widestring::U16CString;
@@ -96,21 +97,19 @@ pub fn init_common_controls() -> Result<(), Error> {
 
 /// Returns location of this running executable
 #[cfg(windows)]
-pub fn get_self_location() -> Result<String, Error> {
+pub fn get_self_location() -> Result<PathBuf, Error> {
     let mut pf: [u16; MAX_PATH] = [0; MAX_PATH];
     let buffer = pf.as_mut_ptr();
     unsafe {
-        // Get the running handle first
+        // Get the running handle
         let hinstance = GetModuleHandleW(null_mut());
 
-        // 0 is error
         if GetModuleFileNameW(hinstance, buffer, MAX_PATH as _) == 0 {
-            Err(Error::new(
-                ErrorKind::Other,
-                "Could not get default install location!",
-            ))
+            Err(Error::last_os_error())
         } else {
-            Ok(U16CString::from_ptr_str(buffer).to_string_lossy())
+            Ok(PathBuf::from(
+                U16CString::from_ptr_str(buffer).to_os_string(),
+            ))
         }
     }
 }
@@ -118,31 +117,32 @@ pub fn get_self_location() -> Result<String, Error> {
 /// Returns location of %temp% folder
 /// "C:\Users\user\AppData\Local\Temp"
 #[cfg(windows)]
-pub fn get_temp_location() -> Result<String, Error> {
+pub fn get_temp_location() -> Result<PathBuf, Error> {
     let mut pf: [u16; MAX_PATH] = [0; MAX_PATH];
     let buffer = pf.as_mut_ptr();
     unsafe {
         // 0 is error
         if GetTempPathW(MAX_PATH as _, buffer) == 0 {
-            Err(Error::new(ErrorKind::Other, "Could not get temp location!"))
+            Err(Error::last_os_error())
         } else {
-            Ok(U16CString::from_ptr_str(buffer).to_string_lossy())
+            Ok(PathBuf::from(
+                U16CString::from_ptr_str(buffer).to_os_string(),
+            ))
         }
     }
 }
 
-fn shell_get_folder_path(id: i32) -> Result<String, Error> {
+fn shell_get_folder_path(id: i32) -> Result<PathBuf, Error> {
     let mut pf: [u16; MAX_PATH] = [0; MAX_PATH];
     let buffer = pf.as_mut_ptr();
     unsafe {
         // S_OK is success
         if SHGetFolderPathW(null_mut(), id, null_mut(), 0, buffer) == S_OK {
-            Ok(U16CString::from_ptr_str(buffer).to_string_lossy())
-        } else {
-            Err(Error::new(
-                ErrorKind::Other,
-                "Could not get default install location!",
+            Ok(PathBuf::from(
+                U16CString::from_ptr_str(buffer).to_os_string(),
             ))
+        } else {
+            Err(Error::last_os_error())
         }
     }
 }
@@ -150,14 +150,14 @@ fn shell_get_folder_path(id: i32) -> Result<String, Error> {
 /// Returns location of local appdata folder
 /// "C:\Users\user\AppData\Local\"
 #[cfg(windows)]
-pub fn get_local_install_location() -> Result<String, Error> {
+pub fn get_local_install_location() -> Result<PathBuf, Error> {
     shell_get_folder_path(CSIDL_LOCAL_APPDATA)
 }
 
 /// Returns location of user's program shortcuts
 /// "C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs"
 #[cfg(windows)]
-pub fn get_user_start_menu_location() -> Result<String, Error> {
+pub fn get_user_start_menu_location() -> Result<PathBuf, Error> {
     shell_get_folder_path(CSIDL_PROGRAMS)
 }
 
@@ -430,6 +430,7 @@ mod tests {
     #[test]
     fn test_get_self_location() {
         let path = get_self_location().expect("Should never fail");
+        let path = path.to_str().unwrap();
         let split: Vec<&str> = path.split(r"\").collect();
 
         // We don't care about the path that leads to the wedge directory
@@ -455,6 +456,7 @@ mod tests {
     #[test]
     fn test_get_temp_location() {
         let path = get_temp_location().expect("Should never fail");
+        let path = path.to_str().unwrap();
         let split: Vec<&str> = path.split(r"\").collect();
 
         // Starts with some valid drive letter
@@ -473,6 +475,7 @@ mod tests {
     #[test]
     fn test_get_local_install_location() {
         let path = get_local_install_location().expect("Should never fail");
+        let path = path.to_str().unwrap();
         let split: Vec<&str> = path.split(r"\").collect();
 
         // Starts with some valid drive letter
@@ -488,6 +491,7 @@ mod tests {
     #[test]
     fn test_get_user_start_menu_location() {
         let path = get_user_start_menu_location().expect("Should never fail");
+        let path = path.to_str().unwrap();
         let split: Vec<&str> = path.split(r"\").collect();
 
         // Starts with some valid drive letter
