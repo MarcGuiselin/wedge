@@ -1,8 +1,4 @@
-⚠️ **Discontinued** Will not work on newer updates of Windows 10 and Windows 11.
-
-Microsoft now prevents overriding the `microsoft-edge:` protocol completely, thus breaking this and other apps like EdgeDeflector. See: [Windows now blocks Edge browser competitors from opening links](https://www.ctrl.blog/entry/microsoft-edge-protocol-competition.html)
-
-# <img src="images/icon.png" align="center"> (WIP) Wedge
+# <img src="images/icon.png" align="center"> Wedge
 
 > A Simple, Open-Source Edge Redirector
 
