@@ -1,4 +1,5 @@
 use super::{win32::*, *};
+use crate::browser::*;
 use std::{
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::{Error, ErrorKind, Write},
@@ -174,8 +175,15 @@ pub fn install(step: usize) -> Result<String, Error> {
         }
         // Open link to confirm success
         5 => {
-            // Open a link that would typically be opened up in edge
-            shell_execute("microsoft-edge:https://www.bing.com/#notify-redirect-extension-successful-wedge-install");
+            // Notify redirector extension wedge was successfully installed
+            // Don't open in ie, edge, or unknown browser
+            let default_browser = get_default_browser().unwrap_or(Browser::Unknown);
+            if ![Browser::Edge, Browser::InternetExplorer, Browser::Unknown]
+                .contains(&default_browser)
+            {
+                shell_execute("microsoft-edge:https://www.bing.com/#notify-redirect-extension-successful-wedge-install");
+            }
+
             String::from(
                 "All steps completed successfully! You may now close this installer.\nWedge can \
                  be easily uninstalled in windows Apps & Features",
