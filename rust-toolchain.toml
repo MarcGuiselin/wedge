@@ -1,0 +1,3 @@
+[toolchain]
+# Tried a few different toolchains, and so far 1.59.0 gets the least av false positives. See: https://github.com/MarcGuiselin/wedge/issues/1
+channel = "1.59.0"
