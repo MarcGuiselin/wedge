@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "installer"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "wedge_lib",
  "winapi",
@@ -359,7 +359,7 @@ checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 
 [[package]]
 name = "uninstaller"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "wedge_lib",
  "widestring",
@@ -399,7 +399,7 @@ dependencies = [
 
 [[package]]
 name = "wedge"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "url",
  "wedge_lib",
@@ -408,7 +408,7 @@ dependencies = [
 
 [[package]]
 name = "wedge_lib"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cargo_metadata",
  "embed-resource",
