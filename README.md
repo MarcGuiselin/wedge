@@ -5,7 +5,7 @@
 [![PayPal Donations shield](https://img.shields.io/badge/donations-paypal-blue.svg?style=flat-square)](https://PayPal.me/marcguiselin/3USD)
 ![Maintenance](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?style=flat-square)
 [![License](https://img.shields.io/github/license/MarcGuiselin/wedge.svg?style=flat-square)](https://github.com/MarcGuiselin/wedge/blob/master/LICENSE)
-[![Build status](https://img.shields.io/github/issues-raw/MarcGuiselin/wedge/master.svg?style=flat-square)](https://ci.appveyor.com/project/sylveon/searchwithmybrowser)
+[![Issue Count](https://img.shields.io/github/issues-raw/MarcGuiselin/wedge.svg?style=flat-square)](https://github.com/MarcGuiselin/wedge/issues)
 
 ## Why Wedge?
 
