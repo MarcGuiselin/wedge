@@ -45,7 +45,7 @@ Uninstalling Wedge will fully restore system defaults changed during install.
 
 ## Building
 
-Wedge is written in rust so you'll need to [install rust](https://www.rust-lang.org/) on your system. Wedge compiles on rust 1.42.0 and newer.
+Wedge is written in rust so you'll need to [install rust](https://www.rust-lang.org/) on your system. Wedge compiles on rust 1.39.0 [(here's why)](https://github.com/MarcGuiselin/wedge/issues/1).
 
 Run `setup.bat` to prepare your environment for building this project.
 
