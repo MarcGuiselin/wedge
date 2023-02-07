@@ -200,7 +200,7 @@ pub fn uninstall() -> Result<(), Error> {
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\msedge.exe",
     )?;
 
-    let install_path = get_local_install_location()?.join(&INSTALL_DIR);
+    let install_path = Path::new(&INSTALL_DIR);
 
     // Try to delete install location. This will only succede when the original
     // uninstaller stops running. panics after 100 failures.
