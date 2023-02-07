@@ -1,6 +1,6 @@
 [package]
 name = "installer"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Marc Guiselin <https://github.com/MarcGuiselin>"]
 edition = "2018"
 description = "Install Wedge - The simple Open-Source Edge Deflector"
