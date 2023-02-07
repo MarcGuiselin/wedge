@@ -6,6 +6,7 @@ use std::{
     ffi::OsStr,
     io::{Error, ErrorKind},
     iter::once,
+    mem::size_of,
     os::windows::ffi::OsStrExt,
     path::PathBuf,
     ptr::null_mut,
@@ -20,16 +21,24 @@ use winapi::{
     },
     um::{
         combaseapi::{CoCreateInstance, CoInitializeEx},
-        fileapi::{CreateFileW, GetTempPathW, OPEN_EXISTING},
+        fileapi::{CreateFileW, GetTempPathW, CREATE_NEW, OPEN_EXISTING},
         handleapi::{CloseHandle, INVALID_HANDLE_VALUE},
         ioapiset::DeviceIoControl,
         libloaderapi::{GetModuleFileNameW, GetModuleHandleW},
         objbase::COINIT_MULTITHREADED,
+        processthreadsapi::{GetCurrentProcess, OpenProcessToken},
+        securitybaseapi::{AdjustTokenPrivileges, GetTokenInformation},
         shellapi::ShellExecuteW,
         shlobj::{SHGetFolderPathW, CSIDL_COMMON_PROGRAMS, CSIDL_LOCAL_APPDATA, CSIDL_PROGRAMS},
-        winbase::{FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT},
+        winbase::{
+            LookupPrivilegeValueW, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+        },
         winioctl::FSCTL_SET_REPARSE_POINT,
-        winnt::{GENERIC_READ, GENERIC_WRITE},
+        winnt::{
+            TokenElevation, GENERIC_READ, GENERIC_WRITE, SE_CREATE_SYMBOLIC_LINK_NAME,
+            SE_PRIVILEGE_ENABLED, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES,
+            TOKEN_QUERY,
+        },
         winuser::SW_SHOWNORMAL,
     },
 };
@@ -336,6 +345,158 @@ mod com {
     }
 }
 
+#[cfg(windows)]
+fn is_elevated() -> bool {
+    unsafe {
+        let mut handle: HANDLE = std::ptr::null_mut();
+        let mut ret = false;
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut handle) != 0 {
+            let mut elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
+            let mut size = size_of::<TOKEN_ELEVATION>() as u32;
+            if GetTokenInformation(
+                handle,
+                TokenElevation,
+                &mut elevation as *mut _ as _,
+                size,
+                &mut size,
+            ) != 0
+            {
+                ret = elevation.TokenIsElevated == 1
+            }
+        }
+        CloseHandle(handle);
+        ret
+    }
+}
+
+#[cfg(windows)]
+fn get_privilege(name: &str) {
+    let mut handle: HANDLE = std::ptr::null_mut();
+    let mut tp = TOKEN_PRIVILEGES {
+        PrivilegeCount: 1,
+        Privileges: [Default::default(); 1],
+    };
+    unsafe {
+        OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut handle);
+        LookupPrivilegeValueW(
+            std::ptr::null_mut(),
+            TEXT!(name),
+            &mut tp.Privileges[0].Luid,
+        );
+        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+        AdjustTokenPrivileges(
+            handle,
+            0,
+            &mut tp,
+            std::mem::size_of::<TOKEN_PRIVILEGES>() as u32,
+            null_mut(),
+            null_mut(),
+        );
+    }
+}
+
+/// Creates a symlink to another file
+#[cfg(windows)]
+pub fn create_symlink(path: &str, target: &str) -> Result<(), Error> {
+    if !is_elevated() {
+        return Err(Error::new(
+            ErrorKind::Other,
+            "Elevated mode needed to create symlinks",
+        ));
+    }
+
+    get_privilege(SE_CREATE_SYMBOLIC_LINK_NAME);
+
+    // Removing any dir or file already there
+    let _ = std::fs::remove_dir(path);
+    let _ = std::fs::remove_file(path);
+
+    // Get print name from pathname
+    let print_name: Vec<u16> = PathBuf::from(path)
+        .file_name()
+        .ok_or(Error::new(ErrorKind::Other, "Invalid path name"))?
+        .encode_wide()
+        .collect();
+
+    // Open handle to folder that will become a junction point
+    let wpath = TEXT!(path);
+    let symlink_handle = unsafe {
+        CreateFileW(
+            wpath,
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            null_mut(),
+            CREATE_NEW,
+            FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+            0 as _,
+        )
+    };
+    if symlink_handle == INVALID_HANDLE_VALUE {
+        return Err(Error::last_os_error());
+    }
+
+    // Create Symbolic Link Reparse Buffer
+    // https://github.com/googleprojectzero/symboliclink-testing-tools/blob/main/CommonUtils/ReparsePoint.cpp#L30-L37
+    let mut buffer: Vec<u16> = {
+        let substitute_name: Vec<u16> = OsStr::new(&format!(r"\??\{}", target))
+            .encode_wide()
+            .collect();
+        let substitute_name_byte_length = substitute_name.len() as u16 * 2;
+        let print_name_byte_length = print_name.len() as u16 * 2;
+
+        // Symbolic Link Reparse Buffer
+        vec![
+            // u32 IO_REPARSE_TAG_SYMLINK = 0xA000000C
+            0x000C,
+            0xA000,
+            // u16 ReparseDataLength
+            12 + substitute_name_byte_length + 2 + print_name_byte_length + 2,
+            // u16 Reserved
+            0,
+            // u16 SubstituteNameOffset
+            0,
+            // u16 SubstituteNameLength
+            substitute_name_byte_length,
+            // u16 PrintNameOffset
+            substitute_name_byte_length + 2,
+            // u16 PrintNameLength
+            print_name_byte_length,
+            // u32 Flags
+            0,
+            0,
+        ]
+        .into_iter()
+        .chain(substitute_name)
+        .chain(once(0))
+        .chain(print_name.into_iter())
+        .chain(once(0))
+        .collect()
+    };
+
+    unsafe {
+        if DeviceIoControl(
+            symlink_handle,
+            FSCTL_SET_REPARSE_POINT,
+            buffer.as_mut_ptr() as _,
+            buffer.len() as u32 * 2,
+            null_mut(),
+            0,
+            &mut 0,
+            null_mut(),
+        ) == 0
+        {
+            let err = Error::last_os_error();
+            CloseHandle(symlink_handle);
+            let _ = std::fs::remove_dir(path);
+            return Err(err);
+        }
+
+        CloseHandle(symlink_handle);
+    }
+
+    Ok(())
+}
+
 /// Creates a directory junction
 #[cfg(windows)]
 pub fn create_directory_junction(path: &str, target: &str) -> Result<(), Error> {
@@ -347,7 +508,7 @@ pub fn create_directory_junction(path: &str, target: &str) -> Result<(), Error> 
 
         // Open handle to folder that will become a junction point
         let wpath = TEXT!(path);
-        let junction_handle: HANDLE = CreateFileW(
+        let junction_handle = CreateFileW(
             wpath,
             GENERIC_READ | GENERIC_WRITE,
             0,
@@ -370,13 +531,20 @@ pub fn create_directory_junction(path: &str, target: &str) -> Result<(), Error> 
 
             // Mount Point Reparse Data Buffer
             vec![
+                // u32 IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003
                 0x0003,
                 0xA000,
+                // u16 ReparseDataLength
                 substitute_name_byte_length + 4 + 8,
+                // u16 Reserved
                 0,
+                // u16 SubstituteNameOffset
                 0,
+                // u16 SubstituteNameLength
                 substitute_name_byte_length,
+                // u16 PrintNameOffset
                 substitute_name_byte_length + 2,
+                // u16 PrintNameLength
                 0,
             ]
             .into_iter()
@@ -411,15 +579,6 @@ pub fn create_directory_junction(path: &str, target: &str) -> Result<(), Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_dddd() {
-        create_directory_junction(
-            r"C:\Users\Marc\Downloads\a\jjjj",
-            r"C:\Users\Marc\Downloads\a\b\c",
-        )
-        .expect("failed");
-    }
 
     #[test]
     fn test_win32_string() {

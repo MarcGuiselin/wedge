@@ -5,14 +5,14 @@ mod uri;
 use std::{env, path::PathBuf, process::Command};
 use wedge_lib::{
     browser::{get_default_browser, Browser},
-    win32::{get_self_location, shell_execute},
+    install::{MSEDGE_PATH, MSEDGE_PROXY_PATH},
+    win32::shell_execute,
 };
 
 /// Entry
 #[cfg(windows)]
 fn main() {
-    let is_running_as_debugger = env::args().nth(1).unwrap_or_default()
-        == r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
+    let is_running_as_debugger = env::args().nth(1).unwrap_or_default() == MSEDGE_PATH;
 
     if is_running_as_debugger {
         let edge_args: Vec<String> = env::args().into_iter().skip(2).collect();
@@ -31,15 +31,19 @@ fn main() {
                 shell_execute(&url);
             }
             None => {
-                // Get path to edge executable through junction point adjacent to this executable
-                let mut edge_alt_path = PathBuf::from(&get_self_location().unwrap()).to_owned();
-                edge_alt_path.pop();
-                let edge_alt_path = edge_alt_path.join(&r"Edge\msedge.exe");
+                let mut default_cwd = PathBuf::from(MSEDGE_PATH);
+                default_cwd.pop();
+
+                // Launch edge from the same cwd
+                let cwd = std::env::current_dir().unwrap_or(default_cwd.into());
+
+                // Get path to edge executable through alternate execution path that avoids ifeo
+                let edge_alt_path = MSEDGE_PROXY_PATH;
 
                 // Call msedge with the same args it would have originally been called with
                 Command::new(edge_alt_path)
                     .args(edge_args)
-                    .current_dir(r"C:\Program Files (x86)\Microsoft\Edge\Application\")
+                    .current_dir(cwd)
                     .spawn()
                     .expect("failed to execute process");
             }

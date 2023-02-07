@@ -21,6 +21,9 @@ pub const APP_DESC: &str =
 pub const APP_NAME: &str = "Wedge";
 pub const STEP_INTERVAL: u32 = 100;
 pub const STEP_COUNT: isize = 6;
+pub const MSEDGE_PATH: &str = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
+pub const MSEDGE_PROXY_PATH: &str =
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge-wedge-proxy.exe";
 
 // Resource names
 pub const BINARY_NAME: &str = "wedge.exe";
@@ -160,16 +163,11 @@ pub fn install(step: usize) -> Result<String, Error> {
 
             let (filter, _) = ifeo.create_subkey(r"0")?;
             filter.set_value("Debugger", &binary_path_string)?;
-            filter.set_value(
-                "FilterFullPath",
-                &r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            )?;
+            filter.set_value("FilterFullPath", &MSEDGE_PATH)?;
 
-            // Create a junction point in the install directory that links to the edge folder
-            // Critically, this allows executing msedge.exe by an alternate path that is ignored by our IFEO
-            let link_folder_path = install_path.join("Edge");
-            let path = link_folder_path.to_str().unwrap();
-            create_directory_junction(path, r"C:\Program Files (x86)\Microsoft\Edge\Application")?;
+            // Create a symlink in the install directory that links to the edge executable
+            // Critically, this allows executing msedge.exe by an alternate path that is ignored by our IFEO filter
+            create_symlink(MSEDGE_PROXY_PATH, MSEDGE_PATH)?;
 
             String::from("Registered IFEO")
         }
@@ -212,6 +210,9 @@ pub fn uninstall() -> Result<(), Error> {
             panic!("");
         }
     }
+
+    // Delete symlink
+    let _ = remove_file(Path::new(&MSEDGE_PROXY_PATH));
 
     // Delete shortcut if it's still there
     let _ = remove_file(get_global_start_menu_location()?.join(&format!("{}.lnk", APP_NAME)));
