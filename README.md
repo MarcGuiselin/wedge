@@ -7,6 +7,12 @@
 [![License](https://img.shields.io/github/license/MarcGuiselin/wedge.svg?style=flat-square)](https://github.com/MarcGuiselin/wedge/blob/master/LICENSE)
 [![Issue Count](https://img.shields.io/github/issues-raw/MarcGuiselin/wedge.svg?style=flat-square)](https://github.com/MarcGuiselin/wedge/issues)
 
+## A choice that matters
+
+Biting down on it's control of the PC market, unopposed by the laxing hammer of the law that [once restricted this kind of behavior](https://en.wikipedia.org/wiki/United_States_v._Microsoft_Corp.), Microsoft has continued to double down on its goals for internet browsing, search and data collection dominance.
+
+We should not be relegated to using the tools forced upon us, especially when we don't know the true extent of their privacy, data collection and censorship.
+
 ## Why Wedge?
 
 __🪓 Break yourself free__ from Microsoft's default browser Edge! Bundled in a one-step installer, Wedge automatically configures your system to use your default browser for things that would typically open in Microsoft Edge!
@@ -15,7 +21,7 @@ __🪓 Break yourself free__ from Microsoft's default browser Edge! Bundled in a
 - If you search something in the windows taskbar have it open in __Google Chrome 🐼__! 
 - If you click on a link in the signin page, have it open in __Brave 🦁__ when you log in!
 
-A spiritual successor to [da2x's EdgeDeflector](https://github.com/da2x/EdgeDeflector), Wedge intends on fixing issues my users were having installing the former. Originally Wedge was only a simple installer script for the EdgeDeflector binary, but now it is a fully-fledged windows installer that bundles it's own small standalone binary and uninstaller all built in memory-safe dependency-less rust.
+A spiritual successor to [da2x's EdgeDeflector](https://github.com/da2x/EdgeDeflector), Wedge intends on fixing issues my users were having installing the former. Originally Wedge was only a simple installer script for the EdgeDeflector binary, but now it is a fully-fledged windows installer that bundles its own small standalone binary and uninstaller all built in memory-safe dependency-less rust.
 
 ## Install
 
@@ -23,7 +29,7 @@ A spiritual successor to [da2x's EdgeDeflector](https://github.com/da2x/EdgeDefl
   2. __Run__ the installer once to configure your system
   3. 🚀 __Try it out!__ Use windows search and type something like “*Wedge is pretty cool*” 
 
-## Why is everything opening in Bing!
+## Why is everything opening in Bing?
 
 Wedge just directs links towards whatever browser you set as default. Microsoft uses their search engine for most of these links. Luckily for you, I've made browser extensions to help redirect Bing to whatever search engine you desire!
 
@@ -33,7 +39,7 @@ Wedge just directs links towards whatever browser you set as default. Microsoft 
 
 ## How it do what it do?
 
-Since April 28 2016, Cortana opens searches only in Microsoft Edge to prevent users from using another search engine than Bing. Wedge puts you back in control of your default browser setting. Wedge associates a small binary called `wedge.exe` with the `microsoft-edge:` protocol, used by Cortana and other parts of Windows to open Edge. After validating the protocol url, Wedge will open it as an internet link. Depending on what you set your default browser, the link might open in Google Chrome, Firefox or Brave; you name it!
+Since April 28 2016, Cortana opens searches only in Microsoft Edge to discourage users from using another search engine than Bing. Wedge puts you back in control of your default browser setting. The Wedge binary acts as a proxy between your operating system and Edge, translating the proprietary `microsft-edge:` protocol into regular internet links any browser can understand. Depending on what you set your default browser to be, the link might open in Google Chrome, Firefox or Brave; you name it!
 
 ## Uninstall
 
